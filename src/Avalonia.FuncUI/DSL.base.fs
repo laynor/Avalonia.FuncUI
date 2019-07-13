@@ -50,6 +50,27 @@ type Views () =
                 (fun _ _ -> func state args)
             )
 
+[<AutoOpen>]
+module StyleExtensions =
+    open Avalonia.Styling
+    open Avalonia
+
+    type Styles with
+        static member Create (styleList: IStyle list) =
+            let styles = Styles()
+            styles.AddRange(Seq.ofList styleList)
+            styles
+
+    type Style with
+        static member Create (selector: Func<Selector, Selector>, setters: ISetter list) =
+            let style = Style(selector)
+            setters
+            |> List.iter (fun item -> style.Setters.Add item)
+            style
+            
+    type Setter with
+        static member Create (property: AvaloniaProperty, value: obj) =
+            Setter(property, value)
 
 [<AbstractClass; Sealed>]
 type Attrs private () =

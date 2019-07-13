@@ -43,20 +43,21 @@ module Counter =
     
     let view (state: CounterState) (dispatch): View =
         Views.dockpanel [
+            Attrs.styles <| Styles.Create [
+                Style.Create((fun s -> s.OfType<Button>().Class(".round").Template().OfType<ContentPresenter>()), [
+                    Setter.Create(Border.CornerRadiusProperty, Avalonia.CornerRadius(10.))
+                ])
+            ]
             Attrs.children [
                 Views.button [
                     Attrs.dockPanel_dock Dock.Bottom
                     Attrs.onClick (fun sender args -> dispatch Decrement)
                     Attrs.content "-"
+                    Attrs.classes [ ".round" ]
                 ]
                 Views.button [
                     Attrs.dockPanel_dock Dock.Bottom
-                    Attrs.onClick (fun sender args ->
-                        let btn = sender :?> IStyledElement
-                        btn.NotifyResourcesChanged(ResourcesChangedEventArgs())
-
-                        dispatch Increment
-                    )
+                    Attrs.onClick (fun sender args -> dispatch Increment)
                     Attrs.margin 5.
                     Attrs.content "+"
                     Attrs.styles <| (
