@@ -45,7 +45,10 @@ module Counter =
         Views.dockpanel [
             Attrs.styles <| Styles.Create [
                 Style.Create((fun s -> s.OfType<Button>().Class(".round").Template().OfType<ContentPresenter>()), [
-                    Setter.Create(Border.CornerRadiusProperty, Avalonia.CornerRadius(10.))
+                    Setter.Create(Border.CornerRadiusProperty, Avalonia.CornerRadius(100.))
+                ])
+                Style.Create((fun s -> s.Is<Control>().Class(".margin-x")), [
+                    Setter.Create(Control.MarginProperty, Avalonia.Thickness(5.))
                 ])
             ]
             Attrs.children [
@@ -53,27 +56,14 @@ module Counter =
                     Attrs.dockPanel_dock Dock.Bottom
                     Attrs.onClick (fun sender args -> dispatch Decrement)
                     Attrs.content "-"
-                    Attrs.classes [ ".round" ]
+                    Attrs.classes [ ".round"; ".margin-x" ]   
                 ]
                 Views.button [
                     Attrs.dockPanel_dock Dock.Bottom
                     Attrs.onClick (fun sender args -> dispatch Increment)
                     Attrs.margin 5.
                     Attrs.content "+"
-                    Attrs.styles <| (
-                        let styles = Styles()
-
-                        let style = Style(fun s -> s.OfType<Button>().Template().OfType<ContentPresenter>())
-                        let setter = Setter(Border.CornerRadiusProperty, Avalonia.CornerRadius(10.))
-                        style.Setters.Add setter
-                        
-                        //let style = Style(fun s -> s.OfType<Button>())
-                        //let setter = Setter(Button.BackgroundProperty, Brushes.Green)
-                        //style.Setters.Add setter
-
-                        styles.Add style
-                        styles
-                    )
+                    Attrs.classes [ ".round"; ".margin-x" ]   
                 ]
                 Views.textBlock [
                     Attrs.dockPanel_dock Dock.Top
