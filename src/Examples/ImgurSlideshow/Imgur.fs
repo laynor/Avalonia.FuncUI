@@ -34,6 +34,7 @@ module Imgur =
             |> List.collect (fun g -> match g.images with
                                       | Some l -> l
                                       | _ -> [])
+            |> List.filter (fun img -> img.typ.StartsWith "image/")
             |> callback
         }
 

@@ -41,7 +41,20 @@ module ImgurSlideshowView =
                      current = current }
 
     let startSearch state =
-        Imgur.startSearch state.queryText
+        let cb images =
+            match state.dispatch with
+            | None -> ()
+            | Some f ->
+                let dispatch msg =
+                    Avalonia.Threading.Dispatcher.UIThread.Post(fun () -> f msg)
+                let current = match images with
+                              | [] -> None
+                              | _ -> Some 0
+                dispatch (SearchPerformed (images, current))
+
+
+        Imgur.startSearch state.query cb |> Async.Start
+        state
 
     let showNthImage state n =
         match n with
@@ -51,16 +64,17 @@ module ImgurSlideshowView =
 
 
     // The update function computes the next state of the application based on the current state and the incoming messages
-    let update (msg: Msg) (state: ImgurSlideshowState) : ImgurSlideshowState =
+
+    let update (msg: Msg) (state: ImgurSlideshowState) : ImgurSlideshowState  =
         try
             printfn "Update"
             match msg with
             | QueryTextChanged(s) -> { state with query = s }
             | SeeNext             -> showNthImage state (Option.map ((+) 1) state.current)
             | SeePrevious         -> showNthImage state (Option.map (fun x -> x - 1) state.current)
-            | StartSearch         -> doSearch state
+            | StartSearch         -> startSearch state
             | InjectDispatcher(f) -> { state with dispatch = Some(f) }
-            | SearchPerformed(images, current) -> {state with images = images; current=current  }
+            | SearchPerformed(images, current) -> {state with images = images; current=current}
         with
             | ex ->
                 printfn "EXCEPTION: %A" ex
@@ -72,7 +86,7 @@ module ImgurSlideshowView =
 
     let imageSource state =
         let source = match state.current with
-                     | None -> "/home/alessandro/Pictures/gianfinocchio.jpg"
+                     | None -> "/home/ale/Pictures/alfano.jpg"
                      | Some(n) -> Imgur.getImage (List.item n state.images)
         new Imaging.Bitmap( source )
 
@@ -109,7 +123,7 @@ module ImgurSlideshowView =
                     Attrs.grid_row 0
                     Attrs.grid_column 2
                     Attrs.content "Search"
-                    Attrs.onClick (fun sender args -> dispatch DoSearch)
+                    Attrs.onClick (fun sender args -> dispatch StartSearch)
                 ]
 
                 Views.button [
