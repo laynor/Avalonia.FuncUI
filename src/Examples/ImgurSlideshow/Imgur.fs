@@ -16,13 +16,27 @@ module Imgur =
 
     let auth = "Client-ID 7d5e7351a586413"
 
+    let formatSearchGalleryUrl sort window page =
+        sprintf "https://api.imgur.com/3/gallery/search/%A/%A/%A" sort window page
+
     let reqSearchGalleries query =
-        let formatUrl sort window page =
-            sprintf "https://api.imgur.com/3/gallery/search/%A/%A/%A" sort window page
-        Http.RequestString ((formatUrl "" "" ""),
+        Http.RequestString ((formatSearchGalleryUrl "" "" ""),
                             query = ["q", query],
                             headers = ["Authorization", auth])
         |> Json.deserialize<GallerySearchResponse>
+
+    let startSearch query callback =
+        let url = formatSearchGalleryUrl "" "" ""
+        async {
+            let! response = Http.AsyncRequestString (url, query = ["q", query], headers = ["Authorization", auth])
+            let json = response |> Json.deserialize<GallerySearchResponse>
+            json.data
+            |> List.collect (fun g -> match g.images with
+                                      | Some l -> l
+                                      | _ -> [])
+            |> callback
+        }
+
 
     let searchImages query =
         let response = reqSearchGalleries query

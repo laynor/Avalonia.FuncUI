@@ -13,21 +13,26 @@ module ImgurSlideshowView =
         query:   string
         images:  Imgur.Image list
         current: int option
+        dispatch: Dispatcher option
     }
+    and Dispatcher = Msg -> unit
+    and Msg = QueryTextChanged of string
+            | SeePrevious
+            | SeeNext
+            | StartSearch
+            | SearchPerformed of Imgur.Image list * int option
+            | InjectDispatcher of Dispatcher
 
     //The initial state of of the application
     let initialState = {
-        query   = "cats"
-        images  = []
-        current = None
+        query    = "cats"
+        images   = []
+        current  = None
+        dispatch = None
     }
 
     // The Msg type defines what events/actions can occur while the application is running
     // the state of the application changes *only* in reaction to these events
-    type Msg = QueryTextChanged of string
-             | SeePrevious
-             | SeeNext
-             | DoSearch
 
     let doSearch state =
         let images = Imgur.searchImages state.query
@@ -35,11 +40,15 @@ module ImgurSlideshowView =
         { state with images  = images
                      current = current }
 
+    let startSearch state =
+        Imgur.startSearch state.queryText
+
     let showNthImage state n =
         match n with
         | Some(m) when m >=0 && m <= List.length state.images ->
             { state with current = n }
         | _ -> failwith (sprintf "Cannot show image #%A" n)
+
 
     // The update function computes the next state of the application based on the current state and the incoming messages
     let update (msg: Msg) (state: ImgurSlideshowState) : ImgurSlideshowState =
@@ -49,7 +58,9 @@ module ImgurSlideshowView =
             | QueryTextChanged(s) -> { state with query = s }
             | SeeNext             -> showNthImage state (Option.map ((+) 1) state.current)
             | SeePrevious         -> showNthImage state (Option.map (fun x -> x - 1) state.current)
-            | DoSearch            -> doSearch state
+            | StartSearch         -> doSearch state
+            | InjectDispatcher(f) -> { state with dispatch = Some(f) }
+            | SearchPerformed(images, current) -> {state with images = images; current=current  }
         with
             | ex ->
                 printfn "EXCEPTION: %A" ex
@@ -74,6 +85,11 @@ module ImgurSlideshowView =
             | "Text" -> dispatch (QueryTextChanged (args.NewValue :?> string))
             | _ -> ()
 
+
+        match state.dispatch with
+        | None -> dispatch (InjectDispatcher dispatch)
+        | _ -> ()
+
         Views.grid [
             Attrs.columnDefinitions columnDefinitions
             Attrs.rowDefinitions rowDefinitions
@@ -85,7 +101,7 @@ module ImgurSlideshowView =
                     Attrs.text state.query
                     Attrs.onPropertyChanged onQueryPropertyChange
                     Attrs.onKeyDown (fun sender args -> match args.Key with
-                                                        | Avalonia.Input.Key.Enter -> dispatch DoSearch
+                                                        | Avalonia.Input.Key.Enter -> dispatch StartSearch
                                                         | _ -> ())
                 ]
 
