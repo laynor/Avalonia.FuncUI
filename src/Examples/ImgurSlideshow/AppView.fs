@@ -3,8 +3,10 @@
 open Avalonia.Controls
 open Avalonia.Media
 open Avalonia.FuncUI.Types
+open Elmish
 open Avalonia.FuncUI
 open Avalonia.Layout
+open Avalonia.FuncUI.Elmish
 
 module ImgurSlideshowView =
 
@@ -22,6 +24,7 @@ module ImgurSlideshowView =
             | StartSearch
             | SearchPerformed of Imgur.Image list * int option
             | InjectDispatcher of Dispatcher
+            | Test of string
 
     //The initial state of of the application
     let initialState = {
@@ -33,29 +36,6 @@ module ImgurSlideshowView =
 
     // The Msg type defines what events/actions can occur while the application is running
     // the state of the application changes *only* in reaction to these events
-
-    let doSearch state =
-        let images = Imgur.searchImages state.query
-        let current = if List.isEmpty images then None else Some(0)
-        { state with images  = images
-                     current = current }
-
-    let startSearch state =
-        let cb images =
-            match state.dispatch with
-            | None -> ()
-            | Some f ->
-                let dispatch msg =
-                    Avalonia.Threading.Dispatcher.UIThread.Post(fun () -> f msg)
-                let current = match images with
-                              | [] -> None
-                              | _ -> Some 0
-                dispatch (SearchPerformed (images, current))
-
-
-        Imgur.startSearch state.query cb |> Async.Start
-        state
-
     let showNthImage state n =
         match n with
         | Some(m) when m >=0 && m <= List.length state.images ->
@@ -65,20 +45,31 @@ module ImgurSlideshowView =
 
     // The update function computes the next state of the application based on the current state and the incoming messages
 
-    let update (msg: Msg) (state: ImgurSlideshowState) : ImgurSlideshowState  =
+    let testfn () = "antani"
+
+    let searchImagesAsync query = async {
+        let! images = Imgur.startSearch query
+        let current = match images with
+                      | [] -> None
+                      | _  -> Some(0)
+        return images, current
+    }
+
+    let update (msg: Msg) (state: ImgurSlideshowState) : ImgurSlideshowState * Cmd<Msg> =
         try
             printfn "Update"
             match msg with
-            | QueryTextChanged(s) -> { state with query = s }
-            | SeeNext             -> showNthImage state (Option.map ((+) 1) state.current)
-            | SeePrevious         -> showNthImage state (Option.map (fun x -> x - 1) state.current)
-            | StartSearch         -> startSearch state
-            | InjectDispatcher(f) -> { state with dispatch = Some(f) }
-            | SearchPerformed(images, current) -> {state with images = images; current=current}
+            | QueryTextChanged(s) -> { state with query = s }, Cmd.none
+            | SeeNext             -> showNthImage state (Option.map ((+) 1) state.current), Cmd.OfFunc.perform testfn () Test
+            | SeePrevious         -> showNthImage state (Option.map (fun x -> x - 1) state.current), Cmd.none
+            | StartSearch         -> state, Cmd.OfAsync.perform searchImagesAsync state.query SearchPerformed
+            | InjectDispatcher(f) -> { state with dispatch = Some(f) }, Cmd.none
+            | SearchPerformed(images, current) -> {state with images = images; current=current}, Cmd.none
+            | Test s -> printfn "Test %A" s; state, Cmd.none
         with
             | ex ->
                 printfn "EXCEPTION: %A" ex
-                state
+                state, Cmd.none
 
 
     let columnDefinitions = ColumnDefinitions "50, 1*, 50"

@@ -19,33 +19,17 @@ module Imgur =
     let formatSearchGalleryUrl sort window page =
         sprintf "https://api.imgur.com/3/gallery/search/%A/%A/%A" sort window page
 
-    let reqSearchGalleries query =
-        Http.RequestString ((formatSearchGalleryUrl "" "" ""),
-                            query = ["q", query],
-                            headers = ["Authorization", auth])
-        |> Json.deserialize<GallerySearchResponse>
-
-    let startSearch query callback =
+    let startSearch query =
         let url = formatSearchGalleryUrl "" "" ""
         async {
             let! response = Http.AsyncRequestString (url, query = ["q", query], headers = ["Authorization", auth])
             let json = response |> Json.deserialize<GallerySearchResponse>
-            json.data
+            return json.data
             |> List.collect (fun g -> match g.images with
                                       | Some l -> l
                                       | _ -> [])
             |> List.filter (fun img -> img.typ.StartsWith "image/")
-            |> callback
         }
-
-
-    let searchImages query =
-        let response = reqSearchGalleries query
-        response.data
-        |> List.collect (fun g -> match g.images with
-                                  | Some(l) -> l
-                                  | _ -> [])
-        |> List.filter (fun img -> img.typ = "image/jpeg")
 
     let getImgPath img =
         let substChars = function
