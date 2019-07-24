@@ -16,6 +16,7 @@ module ImgurSlideshowView =
         images:  Imgur.Image list
         current: int option
         dispatch: Dispatcher option
+        imageSource: Imaging.Bitmap
     }
     and Dispatcher = Msg -> unit
     and Msg = QueryTextChanged of string
@@ -23,7 +24,7 @@ module ImgurSlideshowView =
             | SeeNext
             | StartSearch
             | SearchPerformed of Imgur.Image list * int option
-            | InjectDispatcher of Dispatcher
+            | SetImageSource of Imaging.Bitmap
             | Test of string
 
     //The initial state of of the application
@@ -32,6 +33,7 @@ module ImgurSlideshowView =
         images   = []
         current  = None
         dispatch = None
+        imageSource = null
     }
 
     // The Msg type defines what events/actions can occur while the application is running
@@ -55,17 +57,52 @@ module ImgurSlideshowView =
         return images, current
     }
 
+    let getImageSourceAsync img =
+        async {
+            match img with
+            | None -> return null
+            | Some i ->
+                printfn "madonne"
+                let! path = Imgur.getImage i
+                match path with
+                | Some p  ->
+                    try
+                      let res = new Imaging.Bitmap(p)
+                      printfn "Returning Image!"
+                      return res
+                    with
+                      | ex -> printfn "Exception!!!! %A" ex
+                              return null
+                | None -> return null
+        }
+
     let update (msg: Msg) (state: ImgurSlideshowState) : ImgurSlideshowState * Cmd<Msg> =
         try
             printfn "Update"
+            let displayImageCommand s =
+                Cmd.OfAsync.perform getImageSourceAsync
+                                    (Option.map (fun o -> List.item o s.images) s.current)
+                                    SetImageSource
+
             match msg with
-            | QueryTextChanged(s) -> { state with query = s }, Cmd.none
-            | SeeNext             -> showNthImage state (Option.map ((+) 1) state.current), Cmd.OfFunc.perform testfn () Test
-            | SeePrevious         -> showNthImage state (Option.map (fun x -> x - 1) state.current), Cmd.none
-            | StartSearch         -> state, Cmd.OfAsync.perform searchImagesAsync state.query SearchPerformed
-            | InjectDispatcher(f) -> { state with dispatch = Some(f) }, Cmd.none
-            | SearchPerformed(images, current) -> {state with images = images; current=current}, Cmd.none
-            | Test s -> printfn "Test %A" s; state, Cmd.none
+            | QueryTextChanged(s)              -> { state with query = s },
+                                                  Cmd.none
+
+            | SeeNext                          -> let s = showNthImage state (Option.map ((+) 1) state.current)
+                                                  s, displayImageCommand s
+
+            | SeePrevious                      -> let s = showNthImage state (Option.map (fun x -> x - 1) state.current)
+                                                  s, displayImageCommand s
+
+            | StartSearch                      -> state,
+                                                  Cmd.OfAsync.perform searchImagesAsync state.query SearchPerformed
+
+            | SearchPerformed(images, current) -> let s = {state with images = images; current=current}
+                                                  s, displayImageCommand s
+            | SetImageSource source            -> { state with imageSource = source }, Cmd.none
+            | Test s                           -> printfn "Test %A" s; state,
+                                                  Cmd.none
+
         with
             | ex ->
                 printfn "EXCEPTION: %A" ex
@@ -75,12 +112,6 @@ module ImgurSlideshowView =
     let columnDefinitions = ColumnDefinitions "50, 1*, 50"
     let rowDefinitions    = RowDefinitions "auto, 1*, 50, 1*"
 
-    let imageSource state =
-        let source = match state.current with
-                     | None -> "/home/ale/Pictures/alfano.jpg"
-                     | Some(n) -> Imgur.getImage (List.item n state.images)
-        new Imaging.Bitmap( source )
-
 
     // The view function returns the view of the application depending on its current state. Messages can be passed to the dispatch function.
     let view (state: ImgurSlideshowState) (dispatch): View =
@@ -89,11 +120,6 @@ module ImgurSlideshowView =
             match args.Property.Name with
             | "Text" -> dispatch (QueryTextChanged (args.NewValue :?> string))
             | _ -> ()
-
-
-        match state.dispatch with
-        | None -> dispatch (InjectDispatcher dispatch)
-        | _ -> ()
 
         Views.grid [
             Attrs.columnDefinitions columnDefinitions
@@ -143,7 +169,7 @@ module ImgurSlideshowView =
                     Attrs.grid_row 1
                     Attrs.grid_rowSpan 3
                     Attrs.grid_column 1
-                    Attrs.source (imageSource state)
+                    Attrs.source state.imageSource
                 ]
             ]
         ]

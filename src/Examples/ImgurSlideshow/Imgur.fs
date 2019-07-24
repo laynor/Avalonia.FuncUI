@@ -43,18 +43,24 @@ module Imgur =
         sprintf "/tmp/ImgurSlideshow/images/%A" filename
 
     let downloadBinary url path =
-        let req = Http.Request (url, headers = [ "Authorization", auth ])
-        match req.Body with
-        | Binary bytes ->
-            System.IO.File.WriteAllBytes(path, bytes)
-            path
-        | Text _ -> failwith "Received text"
+        async {
+          let! req = Http.AsyncRequest (url, headers = [ "Authorization", auth ])
+          match req.Body with
+          | Binary bytes ->
+              System.IO.File.WriteAllBytes(path, bytes)
+              return Some path
+          | Text _ -> return None
+        }
 
     let prepareStorage () =
         System.IO.Directory.CreateDirectory "/tmp/ImgurSlideshow/images" |> ignore
 
     let getImage img =
-        let imgPath = getImgPath img
-        if System.IO.File.Exists imgPath
-        then imgPath
-        else (downloadBinary img.url imgPath)
+        async {
+          let imgPath = getImgPath img
+          if System.IO.File.Exists imgPath
+          then
+              return Some imgPath
+          else
+              return! downloadBinary img.url imgPath
+        }
