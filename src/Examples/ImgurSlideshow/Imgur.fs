@@ -36,9 +36,7 @@ module Imgur =
                        | '/' -> '_'
                        | c -> c
 
-        let filename = img.url
-                       |> Seq.map substChars
-                       |> System.String.Concat
+        let filename = img.url.Replace('/', '_')
 
         sprintf "/tmp/ImgurSlideshow/images/%A" filename
 

@@ -12,10 +12,10 @@ module ImgurSlideshowView =
 
     // The model holds data that you want to keep track of while the application is running
     type ImgurSlideshowState = {
-        query:   string
-        images:  Imgur.Image list
-        current: int option
-        dispatch: Dispatcher option
+        query:       string
+        images:      Imgur.Image list
+        current:     int option
+        dispatch:    Dispatcher option
         imageSource: Imaging.Bitmap
     }
     and Dispatcher = Msg -> unit
@@ -29,10 +29,10 @@ module ImgurSlideshowView =
 
     //The initial state of of the application
     let initialState = {
-        query    = "cats"
-        images   = []
-        current  = None
-        dispatch = None
+        query       = "cats"
+        images      = []
+        current     = None
+        dispatch    = None
         imageSource = null
     }
 
@@ -42,6 +42,7 @@ module ImgurSlideshowView =
         match n with
         | Some(m) when m >=0 && m <= List.length state.images ->
             { state with current = n }
+
         | _ -> failwith (sprintf "Cannot show image #%A" n)
 
 
@@ -60,16 +61,13 @@ module ImgurSlideshowView =
     let getImageSourceAsync img =
         async {
             match img with
-            | None -> return null
+            | None   -> return null
             | Some i ->
-                printfn "madonne"
                 let! path = Imgur.getImage i
                 match path with
                 | Some p  ->
                     try
-                      let res = new Imaging.Bitmap(p)
-                      printfn "Returning Image!"
-                      return res
+                      return new Imaging.Bitmap(p)
                     with
                       | ex -> printfn "Exception!!!! %A" ex
                               return null
@@ -110,7 +108,7 @@ module ImgurSlideshowView =
 
 
     let columnDefinitions = ColumnDefinitions "50, 1*, 50"
-    let rowDefinitions    = RowDefinitions "auto, 1*, 50, 1*"
+    let rowDefinitions    = RowDefinitions    "auto, 1*, 50, 1*"
 
 
     // The view function returns the view of the application depending on its current state. Messages can be passed to the dispatch function.
