@@ -17,6 +17,7 @@ module ImgurSlideshowView =
         current:     int option
         dispatch:    Dispatcher option
         imageSource: Imaging.Bitmap
+        loading:     bool
     }
     and Dispatcher = Msg -> unit
     and Msg = QueryTextChanged of string
@@ -29,6 +30,7 @@ module ImgurSlideshowView =
 
     //The initial state of of the application
     let initialState = {
+        loading     = false
         query       = "cats"
         images      = []
         current     = None
@@ -41,7 +43,7 @@ module ImgurSlideshowView =
     let showNthImage state n =
         match n with
         | Some(m) when m >=0 && m <= List.length state.images ->
-            { state with current = n }
+            { state with current = n; loading = true }
 
         | _ -> failwith (sprintf "Cannot show image #%A" n)
 
@@ -92,12 +94,12 @@ module ImgurSlideshowView =
             | SeePrevious                      -> let s = showNthImage state (Option.map (fun x -> x - 1) state.current)
                                                   s, displayImageCommand s
 
-            | StartSearch                      -> state,
+            | StartSearch                      -> { state with loading = true },
                                                   Cmd.OfAsync.perform searchImagesAsync state.query SearchPerformed
 
-            | SearchPerformed(images, current) -> let s = {state with images = images; current=current}
+            | SearchPerformed(images, current) -> let s = {state with images = images; current=current }
                                                   s, displayImageCommand s
-            | SetImageSource source            -> { state with imageSource = source }, Cmd.none
+            | SetImageSource source            -> { state with imageSource = source; loading = false }, Cmd.none
             | Test s                           -> printfn "Test %A" s; state,
                                                   Cmd.none
 
@@ -174,6 +176,7 @@ module ImgurSlideshowView =
                     Attrs.grid_rowSpan 3
                     Attrs.grid_column 1
                     Attrs.radius 20.0
+                    Attrs.isVisible state.loading
                 ]
             ]
         ]
