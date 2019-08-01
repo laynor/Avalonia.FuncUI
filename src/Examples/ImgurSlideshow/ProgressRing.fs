@@ -77,7 +77,7 @@ type ProgressRing() as this =
         AvaloniaXamlLoader.Load this
 
 [<AutoOpen>]
-module Defecus =
+module ProgressRingDSLExtensions =
   type Views with
       static member progressRing (attrs: TypedAttr<ProgressRing> list): View =
               Views.create<ProgressRing>(attrs)
