@@ -26,8 +26,7 @@ type ProgressRing() as this =
        let onTimer (args: EventArgs) =
             let canvas = this.Content :?> Canvas
             if not (isNull canvas) then
-                let tr = RotateTransform()
-                tr.Angle <- _alpha
+                let tr = RotateTransform(Angle = _alpha)
                 _alpha <- _alpha + 360.0 / 120.0
                 canvas.RenderTransform <- tr
                 let s = canvas.Bounds.Size
@@ -49,12 +48,8 @@ type ProgressRing() as this =
 
     member this.MakeRect (alpha, size, radius) =
         let canvas = this.Content :?> Canvas
-        let r = Rectangle()
-        r.Width <- size
-        r.Height <- size / 2.0
-        r.Fill <- this.Foreground
-        let tr = RotateTransform()
-        tr.Angle <- 180.0 * (alpha / Math.PI)
+        let r = Rectangle(Width = size, Height = size / 2.0, Fill = this.Foreground)
+        let tr = RotateTransform(Angle =  180.0 * (alpha / Math.PI))
         r.RenderTransform <- tr
 
         let center = Point(canvas.Bounds.Size.Width / 2.0, canvas.Bounds.Size.Height / 2.0)
