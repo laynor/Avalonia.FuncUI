@@ -9,8 +9,14 @@
     <Content Include="template.json" />
     <Compile Include="Lib.fs" />
     <Compile Include="Imgur.fs" />
+    <Compile Include="ProgressRing.fs" />
     <Compile Include="AppView.fs" />
     <Compile Include="Main.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="ImgurSlideshow.ProgressRing.xaml">
+      <LogicalName>ImgurSlideshow.ProgressRing.xaml</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup />

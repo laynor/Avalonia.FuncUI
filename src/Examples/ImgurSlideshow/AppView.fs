@@ -169,5 +169,11 @@ module ImgurSlideshowView =
                     Attrs.grid_column 1
                     Attrs.source state.imageSource
                 ]
+                Views.progressRing [
+                    Attrs.grid_row 1
+                    Attrs.grid_rowSpan 3
+                    Attrs.grid_column 1
+                    Attrs.radius 20.0
+                ]
             ]
         ]
