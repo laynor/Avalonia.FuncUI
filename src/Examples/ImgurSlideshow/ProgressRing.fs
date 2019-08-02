@@ -18,14 +18,15 @@ type ProgressRing() as this =
 
     let RadiusProperty = AvaloniaProperty.Register<ProgressRing, float>("Radius", 15.0, inherits=true)
 
-    let _timer = DispatcherTimer()
+    let _timer = DispatcherTimer(Interval = TimeSpan.FromMilliseconds(1000.0 / 60.0))
 
     let mutable _alpha = 0.0
 
     do this.InitializeComponent()
        let onTimer (args: EventArgs) =
-            let canvas = this.Content :?> Canvas
-            if not (isNull canvas) then
+            match this.Content :?> Canvas with
+            | null -> ()
+            | canvas ->
                 let tr = RotateTransform(Angle = _alpha)
                 _alpha <- _alpha + 360.0 / 120.0
                 canvas.RenderTransform <- tr
@@ -33,13 +34,9 @@ type ProgressRing() as this =
                 canvas.RenderTransformOrigin <- RelativePoint(s.Width / 2.0,
                                                               s.Height / 2.0,
                                                               RelativeUnit.Absolute)
-            else ()
-       _timer.Interval <- TimeSpan.FromMilliseconds(1000.0 / 60.0)
        _timer.Tick.Add(onTimer)
        _timer.Start()
-       let onLayoutUpdated _ =
-           this.Populate ()
-       this.LayoutUpdated.Add onLayoutUpdated
+       this.LayoutUpdated.Add this.Populate
 
 
     member public this.Radius
@@ -49,16 +46,16 @@ type ProgressRing() as this =
     member this.MakeRect (alpha, size, radius) =
         let canvas = this.Content :?> Canvas
         let r = Rectangle(Width = size, Height = size / 2.0, Fill = this.Foreground)
-        let tr = RotateTransform(Angle =  180.0 * (alpha / Math.PI))
-        r.RenderTransform <- tr
+        r.RenderTransform <- RotateTransform(Angle =  180.0 * (alpha / Math.PI))
 
-        let center = Point(canvas.Bounds.Size.Width / 2.0, canvas.Bounds.Size.Height / 2.0)
-        let pos = center + Point(radius * (cos alpha), radius * sin alpha)
-        Canvas.SetLeft(r, pos.X - r.Width / 2.0)
-        Canvas.SetTop(r, pos.Y - r.Height / 2.0)
+        let hs = canvas.Bounds.Size / 2.0
+        let left = hs.Width + radius * cos alpha - r.Width / 2.0
+        let top = hs.Height + radius * sin alpha - r.Height / 2.0
+        Canvas.SetLeft(r, left)
+        Canvas.SetTop(r, top)
         r
 
-    member this.Populate () =
+    member this.Populate _ =
         let canvas = this.Content :?> Canvas
         canvas.Children.Clear()
         for i in 1..10 do
