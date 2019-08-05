@@ -24,6 +24,7 @@ module Imgur =
         async {
             let! response = Http.AsyncRequestString (url, query = ["q", query], headers = ["Authorization", auth])
             let json = response |> Json.deserialize<GallerySearchResponse>
+
             return json.data
             |> List.collect (fun g -> match g.images with
                                       | Some l -> l

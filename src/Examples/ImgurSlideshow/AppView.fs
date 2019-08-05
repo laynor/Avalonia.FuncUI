@@ -57,11 +57,9 @@ module ImgurSlideshowView =
     let testfn () = "antani"
 
     let searchImagesAsync query = async {
-        let! images = Imgur.startSearch query
-        let current = match images with
-                      | [] -> None
-                      | _  -> Some(0)
-        return images, current
+        match! Imgur.startSearch query with
+        | []   -> return [], None
+        | imgs -> return imgs, Some 0
     }
 
     let getImageSourceAsync img =
@@ -69,8 +67,7 @@ module ImgurSlideshowView =
             match img with
             | None   -> return null
             | Some i ->
-                let! path = Imgur.getImage i
-                match path with
+                match! (Imgur.getImage i) with
                 | Some p  ->
                     try
                       return new Imaging.Bitmap(p)
