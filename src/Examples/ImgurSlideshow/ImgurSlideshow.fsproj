@@ -10,6 +10,7 @@
     <Compile Include="Lib.fs" />
     <Compile Include="Imgur.fs" />
     <Compile Include="ProgressRing.fs" />
+    <Compile Include="ProgressRingElmish.fs" />
     <Compile Include="AppView.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>

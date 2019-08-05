@@ -18,6 +18,7 @@ module ImgurSlideshowView =
         dispatch:    Dispatcher option
         imageSource: Imaging.Bitmap
         loading:     bool
+        ringModel:   ProgressRingElmish.Model
     }
     and Dispatcher = Msg -> unit
     and Msg = QueryTextChanged of string
@@ -27,16 +28,19 @@ module ImgurSlideshowView =
             | SearchPerformed of Imgur.Image list * int option
             | SetImageSource of Imaging.Bitmap
             | Test of string
+            | Ring of ProgressRingElmish.Msg
 
     //The initial state of of the application
-    let initialState = {
-        loading     = false
-        query       = "cats"
-        images      = []
-        current     = None
-        dispatch    = None
-        imageSource = null
-    }
+    let init () =
+        let ringState, ringCmd = ProgressRingElmish.init 50.0
+        { loading     = false
+          query       = "cats"
+          images      = []
+          current     = None
+          dispatch    = None
+          imageSource = null
+          ringModel   = ringState },
+        Cmd.batch [ Cmd.map Ring ringCmd ]
 
     // The Msg type defines what events/actions can occur while the application is running
     // the state of the application changes *only* in reaction to these events
@@ -100,6 +104,8 @@ module ImgurSlideshowView =
             | SearchPerformed(images, current) -> let s = {state with images = images; current=current }
                                                   s, displayImageCommand s
             | SetImageSource source            -> { state with imageSource = source; loading = false }, Cmd.none
+            | Ring msg'                        -> let model, cmd = ProgressRingElmish.update msg' state.ringModel
+                                                  { state with ringModel = model }, Cmd.map Ring cmd
             | Test s                           -> printfn "Test %A" s; state,
                                                   Cmd.none
 
@@ -112,6 +118,10 @@ module ImgurSlideshowView =
     let columnDefinitions = ColumnDefinitions "50, 1*, 50"
     let rowDefinitions    = RowDefinitions    "auto, 1*, 50, 1*"
 
+    let subscription (state:ImgurSlideshowState) =
+        Cmd.batch [
+            Cmd.map Ring (ProgressRingElmish.subscribe state.ringModel)
+        ]
 
     // The view function returns the view of the application depending on its current state. Messages can be passed to the dispatch function.
     let view (state: ImgurSlideshowState) (dispatch): View =
@@ -171,11 +181,17 @@ module ImgurSlideshowView =
                     Attrs.grid_column 1
                     Attrs.source state.imageSource
                 ]
-                Views.progressRing [
+                // Views.progressRing [
+                //     Attrs.grid_row 1
+                //     Attrs.grid_rowSpan 3
+                //     Attrs.grid_column 1
+                //     Attrs.radius 20.0
+                //     Attrs.isVisible state.loading
+                // ]
+                ProgressRingElmish.view state.ringModel (Ring >> dispatch) [
                     Attrs.grid_row 1
                     Attrs.grid_rowSpan 3
                     Attrs.grid_column 1
-                    Attrs.radius 20.0
                     Attrs.isVisible state.loading
                 ]
             ]

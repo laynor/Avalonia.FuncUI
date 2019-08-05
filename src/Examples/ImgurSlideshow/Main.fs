@@ -38,11 +38,12 @@ module Program =
         let mainWindow = MainWindow()
 
         //Create an elmish MVU program using an initial model, update function and view
-        Elmish.Program.mkProgram (fun () -> ImgurSlideshowView.initialState, Cmd.none)
+        Elmish.Program.mkProgram ImgurSlideshowView.init
                                  ImgurSlideshowView.update
                                  ImgurSlideshowView.view
         |> Program.withHost mainWindow
         |> Program.withConsoleTrace
+        |> Program.withSubscription ImgurSlideshowView.subscription
         |> Program.run
 
         app.Run(mainWindow)
