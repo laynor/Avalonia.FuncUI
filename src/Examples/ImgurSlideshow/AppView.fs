@@ -12,7 +12,7 @@ open Avalonia.Layout
 open Avalonia.Styling
 open Avalonia.FuncUI.Elmish
 
-module Sel =
+module Sty =
     let ofType<'T when 'T :> IStyleable> (sel:Selector): Selector =
         sel.OfType<'T>()
 
@@ -21,6 +21,9 @@ module Sel =
 
     let withClass cls (sel:Selector) =
         sel.Class(cls)
+
+    let setter (prop:AvaloniaProperty) (value:obj):Setter =
+        Setter.Create(prop, value)
 
 
 module ImgurSlideshowView =
@@ -145,9 +148,18 @@ module ImgurSlideshowView =
 
         Views.grid [
             Attrs.styles <| Styles.Create [
-                Style.Create((fun s -> s.OfType<Button>().Class(".round").Template().OfType<Presenters.ContentPresenter>()), [
-                    Setter.Create(Border.CornerRadiusProperty, Avalonia.CornerRadius(20.))
+                // Style.Create((fun s -> s.OfType<Button>().Class(".round").Template().OfType<Presenters.ContentPresenter>()), [
+                //     Setter.Create(Border.CornerRadiusProperty, Avalonia.CornerRadius(20.))
+                // ])
+
+                Style.Create((fun s -> s |> Sty.ofType<Button> |> Sty.withClass ".round" |> Sty.template |> Sty.ofType<Presenters.ContentPresenter>), [
+                    Sty.setter Border.CornerRadiusProperty (Avalonia.CornerRadius 20.0)
                 ])
+
+                Style.Create((fun s -> s.OfType<Button>().Class(".round")), [
+                    Sty.setter Button.BackgroundProperty Brushes.Yellow
+                ])
+
             ]
             Attrs.columnDefinitions columnDefinitions
             Attrs.rowDefinitions rowDefinitions
