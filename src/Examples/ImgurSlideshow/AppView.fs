@@ -1,12 +1,27 @@
 ﻿namespace ImgurSlideshow
 
-open Avalonia.Controls
-open Avalonia.Media
-open Avalonia.FuncUI.Types
+open Avalonia
 open Elmish
+
+open Avalonia.Controls
+// open Avalonia.Controls.Presenters
+open Avalonia.Media
 open Avalonia.FuncUI
+open Avalonia.FuncUI.Types
 open Avalonia.Layout
+open Avalonia.Styling
 open Avalonia.FuncUI.Elmish
+
+module Sel =
+    let ofType<'T when 'T :> IStyleable> (sel:Selector): Selector =
+        sel.OfType<'T>()
+
+    let template (sel:Selector) =
+        sel.Template()
+
+    let withClass cls (sel:Selector) =
+        sel.Class(cls)
+
 
 module ImgurSlideshowView =
 
@@ -129,6 +144,11 @@ module ImgurSlideshowView =
             | _ -> ()
 
         Views.grid [
+            Attrs.styles <| Styles.Create [
+                Style.Create((fun s -> s.OfType<Button>().Class(".round").Template().OfType<Presenters.ContentPresenter>()), [
+                    Setter.Create(Border.CornerRadiusProperty, Avalonia.CornerRadius(20.))
+                ])
+            ]
             Attrs.columnDefinitions columnDefinitions
             Attrs.rowDefinitions rowDefinitions
             Attrs.children [
@@ -155,6 +175,7 @@ module ImgurSlideshowView =
                     Attrs.grid_column 0
                     Attrs.fontSize 32.0
                     Attrs.content "<"
+                    Attrs.classes [".round"]
                     Attrs.isEnabled (match state.current with
                                      | Some n when n > 0 -> true
                                      | _ -> false)
@@ -166,6 +187,7 @@ module ImgurSlideshowView =
                     Attrs.grid_column 2
                     Attrs.fontSize 32.0
                     Attrs.content ">"
+                    Attrs.classes [".round"]
                     Attrs.isEnabled (match state.current with
                                      | Some n when n < List.length (state.images) - 1 -> true
                                      | _ -> false)
